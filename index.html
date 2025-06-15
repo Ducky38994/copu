@@ -1,0 +1,1666 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>OWO Farm</title>
+    <style>
+        /* Import pixel font via Google Fonts fallback for pixel style */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        /* CSS Variables for Black/White theme */
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --header-gradient-start: #111111;
+            --header-gradient-end: #222222;
+            --accent-color: #ffffff;
+            --sidebar-bg: #111111;
+            --card-bg: #111111;
+            --border-color: #222222;
+            --error-color: #ff5555;
+            --success-color: #55ff55;
+            --info-color: #55aaff;
+        }
+
+        /* Basic reset */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Press Start 2P', monospace, monospace;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: grayscale;
+            user-select: none;
+            overflow-x: hidden;
+            font-size: 14px;
+        }
+
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        a:hover,
+        a:focus {
+            text-decoration: underline;
+        }
+
+        /* Avoid scrolling on loading until authenticated */
+        body.loading {
+            overflow: hidden;
+        }
+
+        /* LOGIN OVERLAY */
+        #login-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        #login-box {
+            background: var(--sidebar-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 40px 50px;
+            max-width: 340px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 15px #444;
+        }
+
+        #login-box h1 {
+            font-size: 18px;
+            color: var(--text-color);
+            margin-bottom: 28px;
+            letter-spacing: 2px;
+        }
+
+        #login-box form {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        #login-box label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+            display: block;
+            text-align: left;
+        }
+
+        #login-box input[type="text"],
+        #login-box input[type="password"] {
+            font-family: 'Press Start 2P', monospace;
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            border-radius: 0;
+            padding: 14px 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            outline-offset: 2px;
+            outline-color: var(--accent-color);
+        }
+
+        #login-box input[type="text"]::placeholder,
+        #login-box input[type="password"]::placeholder {
+            color: #888888;
+        }
+
+        #login-box button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            padding: 14px 0;
+            border: 2px solid var(--accent-color);
+            background: transparent;
+            color: var(--accent-color);
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: background-color 0.2s ease;
+        }
+
+        #login-box button:hover,
+        #login-box button:focus {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            outline: none;
+        }
+
+        #login-error {
+            color: var(--error-color);
+            font-size: 12px;
+            margin-top: 10px;
+            min-height: 16px;
+        }
+
+        /* ANIMATION CONTAINER */
+        #animation-container {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-color);
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2px;
+            overflow: hidden;
+            visibility: hidden;
+        }
+
+        #animation-container.visible {
+            visibility: visible;
+        }
+
+        /* Pixel blocks animation - black and white squares */
+        .pixel-block {
+            width: 16px;
+            height: 16px;
+            background-color: white;
+            opacity: 0;
+            animation-fill-mode: forwards;
+            animation-timing-function: steps(1);
+        }
+
+        /* Main app container hidden before login */
+        #app {
+            display: none;
+            min-height: 100vh;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            grid-template-rows: 64px 1fr;
+            grid-template-areas:
+                "header header header"
+                "sidebar main right";
+            font-size: 14px;
+        }
+
+        /* HEADER */
+        header#app-header {
+            grid-area: header;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            background: linear-gradient(90deg, #222222 0%, #111111 100%);
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        #net-worth {
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+
+        #quick-actions {
+            display: flex;
+            gap: 24px;
+        }
+
+        button.action-btn {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 32px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            white-space: nowrap;
+            direction: ltr;
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            cursor: pointer;
+            padding: 10px;
+            margin: 0;
+            border-radius: 6px;
+            user-select: none;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button.action-btn:hover,
+        button.action-btn:focus {
+            background-color: #444;
+            outline: none;
+        }
+
+        /* SIDEBAR LEFT */
+        aside#sidebar {
+            grid-area: sidebar;
+            background: var(--sidebar-bg);
+            padding: 32px 16px;
+            border-right: 2px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #sidebar nav {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #sidebar nav button {
+            background: none;
+            border: none;
+            padding: 12px 16px;
+            color: var(--accent-color);
+            cursor: pointer;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            text-align: left;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        #sidebar nav button:hover,
+        #sidebar nav button.active {
+            background-color: #222;
+            outline: none;
+        }
+
+        #sidebar h3 {
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        /* MAIN CONTENT AREA */
+        main#main-content {
+            grid-area: main;
+            background: var(--bg-color);
+            padding: 32px 56px;
+            overflow-y: auto;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+        /* RIGHT PANEL */
+        aside#right-panel {
+            grid-area: right;
+            background: var(--sidebar-bg);
+            padding: 32px 28px;
+            border-left: 2px solid var(--border-color);
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 0;
+            padding: 20px 28px;
+            box-shadow: none;
+            color: var(--text-color);
+        }
+
+        .card h4 {
+            font-size: 14px;
+            margin-bottom: 16px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Section titles */
+        section h2 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        /* Buttons */
+        button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            padding: 14px 24px;
+            border: 2px solid var(--accent-color);
+            background: transparent;
+            color: var(--accent-color);
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: background-color 0.2s ease;
+            border-radius: 6px;
+            user-select: none;
+        }
+
+        button:hover,
+        button:focus {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            outline: none;
+        }
+
+        /* Transaction filter buttons */
+        #transaction-filter {
+            margin-top: 24px;
+            margin-bottom: 16px;
+        }
+
+        #transaction-filter button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            padding: 12px 28px;
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            background: transparent;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+            margin-right: 16px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        #transaction-filter button.active,
+        #transaction-filter button:hover,
+        #transaction-filter button:focus {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            outline: none;
+        }
+
+        /* Transaction list */
+        #transaction-list {
+            max-width: 800px;
+            margin-top: 16px;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-description {
+            flex: 1 1 auto;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .transaction-amount {
+            font-family: 'Press Start 2P', monospace;
+            min-width: 128px;
+            text-align: right;
+        }
+
+        .income {
+            color: var(--success-color);
+        }
+
+        .expense {
+            color: var(--error-color);
+        }
+
+        .info {
+            color: var(--info-color);
+        }
+
+        /* Buy/Sell Trade form */
+        #trade-form {
+            margin-top: 24px;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px 28px;
+            max-width: 460px;
+        }
+
+        #trade-form label {
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        #trade-form input[type="number"],
+        #trade-form select {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            width: 100%;
+            padding: 14px 12px;
+            color: var(--text-color);
+            background: var(--bg-color);
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 18px;
+            outline-offset: 2px;
+            outline-color: var(--accent-color);
+            text-transform: uppercase;
+        }
+
+        #trade-form #calculated-cost {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+        }
+
+        /* Loan form */
+        #loan-form {
+            margin-top: 24px;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px 28px;
+            max-width: 460px;
+        }
+
+        #loan-form label {
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        #loan-form input[type="number"] {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            width: 100%;
+            padding: 14px 12px;
+            color: var(--text-color);
+            background: var(--bg-color);
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 18px;
+            outline-offset: 2px;
+            outline-color: var(--accent-color);
+            text-transform: uppercase;
+        }
+
+        #loan-form #loan-info {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Intro modal */
+        #intro-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-color);
+            font-family: 'Press Start 2P', monospace;
+            text-align: center;
+            user-select: none;
+        }
+
+        #intro-content {
+            background: var(--sidebar-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 30px 40px;
+            max-width: 480px;
+        }
+
+        #intro-content h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        #intro-content p {
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        #intro-content button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            padding: 14px 24px;
+            border: 2px solid var(--accent-color);
+            background: transparent;
+            color: var(--accent-color);
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: background-color 0.2s ease;
+            border-radius: 6px;
+            user-select: none;
+        }
+
+        #intro-content button:hover,
+        #intro-content button:focus {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            outline: none;
+        }
+
+        /* Modal styles for loan early repayment and send/receive OWO */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 11000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-color);
+            font-family: 'Press Start 2P', monospace;
+            text-align: center;
+            user-select: none;
+        }
+
+        .modal-content {
+            background: var(--sidebar-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 30px 40px;
+            max-width: 480px;
+            width: 100%;
+            position: relative;
+        }
+
+        .modal-content h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .modal-content label {
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: block;
+            text-align: left;
+        }
+
+        .modal-content input[type="number"],
+        .modal-content input[type="text"],
+        .modal-content select {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            width: 100%;
+            padding: 14px 12px;
+            color: var(--text-color);
+            background: var(--bg-color);
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 18px;
+            outline-offset: 2px;
+            outline-color: var(--accent-color);
+            text-transform: uppercase;
+        }
+
+        .modal-content button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            padding: 14px 24px;
+            border: 2px solid var(--accent-color);
+            background: transparent;
+            color: var(--accent-color);
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: background-color 0.2s ease;
+            border-radius: 6px;
+            user-select: none;
+            margin-top: 10px;
+        }
+
+        .modal-content button:hover,
+        .modal-content button:focus {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            outline: none;
+        }
+
+        .modal-close-btn {
+            margin-top: 0;
+            background: transparent;
+            border: none;
+            color: var(--accent-color);
+            font-size: 20px;
+            cursor: pointer;
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            user-select: none;
+        }
+
+        .modal-close-btn:hover,
+        .modal-close-btn:focus {
+            color: #ff5555;
+            outline: none;
+        }
+
+        /* Transfer code display */
+        #transfer-code-display {
+            background: var(--bg-color);
+            border: 2px solid var(--accent-color);
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            letter-spacing: 3px;
+            margin-top: 12px;
+            word-break: break-all;
+            user-select: text;
+            color: var(--accent-color);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            #app {
+                grid-template-columns: 1fr;
+                grid-template-rows: 64px 1fr auto;
+                grid-template-areas:
+                    "header"
+                    "main"
+                    "sidebar";
+            }
+
+            aside#sidebar {
+                border-right: none;
+                border-top: 2px solid var(--border-color);
+                padding: 16px 16px 32px 16px;
+                flex-direction: row;
+                gap: 12px;
+                overflow-x: auto;
+                font-size: 10px;
+            }
+
+            #sidebar nav {
+                flex-direction: row;
+                gap: 12px;
+            }
+
+            #sidebar nav button {
+                padding: 8px 12px;
+                font-size: 10px;
+                border-radius: 4px;
+            }
+
+            aside#right-panel {
+                display: none;
+            }
+
+            main#main-content {
+                padding: 24px 24px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+</head>
+
+<body class="loading">
+    <!-- LOGIN OVERLAY -->
+    <div aria-labelledby="login-title" aria-modal="true" id="login-overlay" role="dialog">
+        <div id="login-box">
+            <h1 id="login-title">WELCOME TO OWO FARM</h1>
+            <form id="login-form" autocomplete="off" aria-describedby="login-error" novalidate>
+                <label for="username">USERNAME</label>
+                <input type="text" id="username" name="username" placeholder="ENTER USERNAME" required
+                    aria-required="true" autocomplete="off" />
+
+                <label for="password">PASSWORD</label>
+                <input type="password" id="password" name="password" placeholder="ENTER PASSWORD" required
+                    aria-required="true" autocomplete="off" />
+
+                <button type="submit" aria-label="Log in to OWO Farm">LOGIN</button>
+                <div id="login-error" aria-live="polite" role="alert"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- INTRO MODAL -->
+    <div id="intro-modal" role="dialog" aria-modal="true" aria-labelledby="intro-title" style="display:none;">
+        <div id="intro-content">
+            <h2 id="intro-title">WELCOME TO OWO FARM</h2>
+            <p>Manage your finances by trading Wheat and Wool. Watch prices fluctuate and make smart trades to grow your
+                wealth.</p>
+            <p>Remember to pay your monthly server fee to maintain your credit score and avoid late fees.</p>
+            <button id="intro-close-btn" aria-label="Close introduction">START</button>
+        </div>
+    </div>
+
+    <!-- MODAL: Early Loan Repayment -->
+    <div id="early-loan-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="early-loan-title"
+        style="display:none;">
+        <div class="modal-content" tabindex="0">
+            <button class="modal-close-btn" aria-label="Close early loan repayment modal"
+                id="early-loan-close">&times;</button>
+            <h3 id="early-loan-title">Early Loan Repayment</h3>
+            <form id="early-loan-form" novalidate>
+                <label for="early-loan-select">Select Loan</label>
+                <select id="early-loan-select" required></select>
+
+                <label for="early-repay-amount">Repayment Amount (OWO)</label>
+                <input type="number" id="early-repay-amount" name="early-repay-amount" min="1" step="0.01" required />
+
+                <button type="submit">Repay Loan</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Send/Receive OWO Coins -->
+    <div id="owo-transfer-modal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="owo-transfer-title" style="display:none;">
+        <div class="modal-content" tabindex="0">
+            <button class="modal-close-btn" aria-label="Close OWO transfer modal"
+                id="owo-transfer-close">&times;</button>
+            <h3 id="owo-transfer-title">Send / Receive OWO Coins</h3>
+            <form id="owo-transfer-form" novalidate>
+                <label for="transfer-type">Transfer Type</label>
+                <select id="transfer-type" required>
+                    <option value="send">Send</option>
+                    <option value="receive">Receive</option>
+                </select>
+
+                <div id="send-section">
+                    <label for="transfer-amount">Amount (OWO)</label>
+                    <input type="number" id="transfer-amount" name="transfer-amount" min="1" step="0.01" />
+
+                    <label for="transfer-recipient">Recipient</label>
+                    <input type="text" id="transfer-recipient" name="transfer-recipient" placeholder="Enter username" />
+                </div>
+
+                <div id="receive-section" style="display:none;">
+                    <label for="transfer-code">Enter Transfer Code</label>
+                    <input type="text" id="transfer-code" name="transfer-code" placeholder="Enter transfer code" />
+                </div>
+
+                <button type="submit">Confirm Transfer</button>
+            </form>
+            <div id="transfer-code-display" style="display:none;" aria-live="polite" aria-atomic="true"></div>
+        </div>
+    </div>
+
+    <!-- PIXEL WORLD OPENING ANIMATION CONTAINER -->
+    <div id="animation-container" aria-hidden="true"></div>
+
+    <!-- MAIN APP -->
+    <div id="app" role="application" aria-label="OWO Farm personal finance application">
+        <header id="app-header">
+            <div id="net-worth" aria-live="polite" aria-atomic="true">Total Net Worth: <span
+                    id="net-worth-value">3000</span> OWO</div>
+            <div id="quick-actions" role="toolbar">
+                <button class="action-btn" id="add-transaction-btn" aria-label="Add new transaction"
+                    title="Add Transaction">add</button>
+                <button class="action-btn" id="add-account-btn" aria-label="Add new account"
+                    title="Add Account">account_balance</button>
+                <button class="action-btn" id="notifications-btn" aria-label="Notifications"
+                    title="Notifications">notifications</button>
+                <button class="action-btn" id="early-loan-btn" aria-label="Early loan repayment"
+                    title="Early Loan Repayment">payment</button>
+                <button class="action-btn" id="owo-transfer-btn" aria-label="Send or receive OWO coins"
+                    title="Send/Receive OWO">swap_horiz</button>
+            </div>
+        </header>
+
+        <aside id="sidebar" aria-label="Account navigation and financial categories">
+            <nav id="account-nav" aria-label="Accounts">
+                <h3>Sections</h3>
+                <button class="active" data-section="trading">Trading</button>
+                <button data-section="income">Income</button>
+                <button data-section="expenses">Expenses</button>
+                <button data-section="loans">Loans</button>
+            </nav>
+        </aside>
+
+        <main id="main-content" tabindex="0">
+            <!-- Trading Section -->
+            <section id="trading-section" aria-label="Trading section">
+                <h2>Trading</h2>
+                <div class="card mb-6">
+                    <h4>Market Prices</h4>
+                    <p>Wheat Price: <span id="wheat-price">100</span> BP per kg</p>
+                    <p>Wool Price: <span id="wool-price">70</span> BP per kg</p>
+                </div>
+                <form id="trade-form" aria-label="Trade form">
+                    <label for="trade-item">Item</label>
+                    <select id="trade-item" name="trade-item" required>
+                        <option value="wheat">Wheat</option>
+                        <option value="wool">Wool</option>
+                    </select>
+
+                    <label for="trade-type">Trade Type</label>
+                    <select id="trade-type" name="trade-type" required>
+                        <option value="buy">Buy</option>
+                        <option value="sell">Sell</option>
+                    </select>
+
+                    <label for="quantity">Quantity (kg)</label>
+                    <input type="number" id="quantity" name="quantity" min="1" value="1" required />
+
+                    <div id="calculated-cost">Total Cost: 0 BP</div>
+
+                    <button type="submit">Confirm Trade</button>
+                </form>
+            </section>
+
+            <!-- Income Section -->
+            <section id="income-section" aria-label="Income section" style="display:none;">
+                <h2>Income</h2>
+                <div id="income-list" class="card" style="max-height: 400px; overflow-y: auto;"></div>
+            </section>
+
+            <!-- Expenses Section -->
+            <section id="expenses-section" aria-label="Expenses section" style="display:none;">
+                <h2>Expenses</h2>
+                <div id="expenses-list" class="card" style="max-height: 400px; overflow-y: auto;"></div>
+            </section>
+
+            <!-- Loans Section -->
+            <section id="loans-section" aria-label="Loans section" style="display:none;">
+                <h2>Loans</h2>
+                <div class="card mb-6">
+                    <p>Credit Score: <span id="credit-score">100%</span></p>
+                    <p>Miss paying server fee once results in 8.3% credit score loss.</p>
+                    <p>Maintain your server fee payments to keep your credit score high.</p>
+                </div>
+                <form id="loan-form" aria-label="Loan form">
+                    <label for="loan-amount">Loan Amount (OWO)</label>
+                    <input type="number" id="loan-amount" name="loan-amount" min="1" value="1000" required />
+                    <button type="submit">Take Loan</button>
+                </form>
+                <div id="loan-list" class="card" style="max-height: 300px; overflow-y: auto; margin-top: 20px;">
+                    <h4>Active Loans</h4>
+                    <ul id="loans-ul" style="list-style:none; padding-left:0;"></ul>
+                </div>
+            </section>
+        </main>
+
+        <aside id="right-panel" aria-label="Right panel with server fee info and actions">
+            <div class="card">
+                <h4>Server Fee Info</h4>
+                <p>Each person has an expense of <strong>20 BP</strong> as a monthly server fee.</p>
+                <p>If the fee is not paid in the month, next month the fee becomes <strong>40 BP + 10 BP late
+                        fee</strong>.</p>
+                <p>If paid on time, only <strong>20 BP</strong> is charged.</p>
+                <p>Each transaction has a tax of <strong>0.5 BP</strong>.</p>
+                <button id="pay-server-fee-btn" style="margin-top:12px;">Pay Server Fee</button>
+            </div>
+        </aside>
+
+    </div>
+
+    <script>
+        // Constants
+        const initialNetWorth = 3000;
+        const taxPerTransaction = 0.5;
+        const monthlyServerFee = 20;
+        const lateFeeBase = 40;
+        const lateFeeExtra = 10;
+        const creditScoreLossPerMissedFee = 8.3;
+
+        // State
+        let netWorth = initialNetWorth;
+        let wheatPrice = 100;
+        let woolPrice = 70;
+        let transactions = [];
+        let serverFeePaidThisMonth = false;
+        let currentMonth = new Date().getMonth();
+        let creditScore = 100;
+        let loans = [];
+
+        // Track inventory of items bought minus sold
+        let inventory = {
+            wheat: 0,
+            wool: 0
+        };
+
+        // Transfer codes storage: code -> { amount, sender, used }
+        let transferCodes = {};
+
+        // DOM Elements
+        const loginOverlay = document.getElementById('login-overlay');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const app = document.getElementById('app');
+        const netWorthValue = document.getElementById('net-worth-value');
+        const wheatPriceEl = document.getElementById('wheat-price');
+        const woolPriceEl = document.getElementById('wool-price');
+        const tradeForm = document.getElementById('trade-form');
+        const tradeItemSelect = document.getElementById('trade-item');
+        const tradeTypeSelect = document.getElementById('trade-type');
+        const quantityInput = document.getElementById('quantity');
+        const calculatedCostEl = document.getElementById('calculated-cost');
+        const incomeSection = document.getElementById('income-section');
+        const expensesSection = document.getElementById('expenses-section');
+        const incomeList = document.getElementById('income-list');
+        const expensesList = document.getElementById('expenses-list');
+        const payServerFeeBtn = document.getElementById('pay-server-fee-btn');
+        const creditScoreEl = document.getElementById('credit-score');
+        const loanForm = document.getElementById('loan-form');
+        const loanAmountInput = document.getElementById('loan-amount');
+        const loansUl = document.getElementById('loans-ul');
+        const introModal = document.getElementById('intro-modal');
+        const introCloseBtn = document.getElementById('intro-close-btn');
+        const sidebarButtons = document.querySelectorAll('#account-nav button');
+        const tradingSection = document.getElementById('trading-section');
+        const incomeSectionMain = document.getElementById('income-section');
+        const expensesSectionMain = document.getElementById('expenses-section');
+        const loansSectionMain = document.getElementById('loans-section');
+
+        // New modal elements for early loan repayment
+        const earlyLoanModal = document.getElementById('early-loan-modal');
+        const earlyLoanCloseBtn = document.getElementById('early-loan-close');
+        const earlyLoanForm = document.getElementById('early-loan-form');
+        const earlyLoanSelect = document.getElementById('early-loan-select');
+        const earlyRepayAmountInput = document.getElementById('early-repay-amount');
+        const earlyLoanBtn = document.getElementById('early-loan-btn');
+
+        // New modal elements for OWO transfer
+        const owoTransferModal = document.getElementById('owo-transfer-modal');
+        const owoTransferCloseBtn = document.getElementById('owo-transfer-close');
+        const owoTransferForm = document.getElementById('owo-transfer-form');
+        const transferTypeSelect = document.getElementById('transfer-type');
+        const transferAmountInput = document.getElementById('transfer-amount');
+        const transferRecipientInput = document.getElementById('transfer-recipient');
+        const transferCodeInput = document.getElementById('transfer-code');
+        const transferCodeDisplay = document.getElementById('transfer-code-display');
+        const sendSection = document.getElementById('send-section');
+        const receiveSection = document.getElementById('receive-section');
+        const owoTransferBtn = document.getElementById('owo-transfer-btn');
+
+        // Save/load keys
+        const STORAGE_PREFIX = 'owoFarm_';
+
+        // Save state to localStorage
+        function saveState(username) {
+            if (!username) return;
+            try {
+                localStorage.setItem(STORAGE_PREFIX + username + '_netWorth', netWorth.toString());
+                localStorage.setItem(STORAGE_PREFIX + username + '_wheatPrice', wheatPrice.toString());
+                localStorage.setItem(STORAGE_PREFIX + username + '_woolPrice', woolPrice.toString());
+                localStorage.setItem(STORAGE_PREFIX + username + '_transactions', JSON.stringify(transactions));
+                localStorage.setItem(STORAGE_PREFIX + username + '_serverFeePaidThisMonth', serverFeePaidThisMonth ? '1' : '0');
+                localStorage.setItem(STORAGE_PREFIX + username + '_currentMonth', currentMonth.toString());
+                localStorage.setItem(STORAGE_PREFIX + username + '_creditScore', creditScore.toString());
+                localStorage.setItem(STORAGE_PREFIX + username + '_loans', JSON.stringify(loans));
+                localStorage.setItem(STORAGE_PREFIX + username + '_inventory', JSON.stringify(inventory));
+                localStorage.setItem(STORAGE_PREFIX + username + '_transferCodes', JSON.stringify(transferCodes));
+                localStorage.setItem(STORAGE_PREFIX + username + '_activeSection', getActiveSection());
+            } catch (e) {
+                console.error('Error saving state:', e);
+            }
+        }
+
+        // Load state from localStorage
+        function loadState(username) {
+            if (!username) return false;
+            try {
+                const netWorthLS = localStorage.getItem(STORAGE_PREFIX + username + '_netWorth');
+                const wheatPriceLS = localStorage.getItem(STORAGE_PREFIX + username + '_wheatPrice');
+                const woolPriceLS = localStorage.getItem(STORAGE_PREFIX + username + '_woolPrice');
+                const transactionsLS = localStorage.getItem(STORAGE_PREFIX + username + '_transactions');
+                const serverFeePaidLS = localStorage.getItem(STORAGE_PREFIX + username + '_serverFeePaidThisMonth');
+                const currentMonthLS = localStorage.getItem(STORAGE_PREFIX + username + '_currentMonth');
+                const creditScoreLS = localStorage.getItem(STORAGE_PREFIX + username + '_creditScore');
+                const loansLS = localStorage.getItem(STORAGE_PREFIX + username + '_loans');
+                const inventoryLS = localStorage.getItem(STORAGE_PREFIX + username + '_inventory');
+                const transferCodesLS = localStorage.getItem(STORAGE_PREFIX + username + '_transferCodes');
+                const activeSectionLS = localStorage.getItem(STORAGE_PREFIX + username + '_activeSection');
+
+                if (netWorthLS !== null) netWorth = parseFloat(netWorthLS);
+                if (wheatPriceLS !== null) wheatPrice = parseFloat(wheatPriceLS);
+                if (woolPriceLS !== null) woolPrice = parseFloat(woolPriceLS);
+                if (transactionsLS !== null) transactions = JSON.parse(transactionsLS);
+                if (serverFeePaidLS !== null) serverFeePaidThisMonth = serverFeePaidLS === '1';
+                if (currentMonthLS !== null) currentMonth = parseInt(currentMonthLS);
+                if (creditScoreLS !== null) creditScore = parseFloat(creditScoreLS);
+                if (loansLS !== null) loans = JSON.parse(loansLS);
+                if (inventoryLS !== null) inventory = JSON.parse(inventoryLS);
+                if (transferCodesLS !== null) transferCodes = JSON.parse(transferCodesLS);
+
+                if (activeSectionLS) {
+                    setActiveSection(activeSectionLS);
+                } else {
+                    setActiveSection('trading');
+                }
+
+                return true;
+            } catch (e) {
+                console.error('Error loading state:', e);
+                return false;
+            }
+        }
+
+        // Get active section from sidebar buttons
+        function getActiveSection() {
+            for (const btn of sidebarButtons) {
+                if (btn.classList.contains('active')) {
+                    return btn.dataset.section;
+                }
+            }
+            return 'trading';
+        }
+
+        // Set active section by name
+        function setActiveSection(section) {
+            sidebarButtons.forEach(b => b.classList.remove('active'));
+            const btn = Array.from(sidebarButtons).find(b => b.dataset.section === section);
+            if (btn) btn.classList.add('active');
+
+            tradingSection.style.display = 'none';
+            incomeSectionMain.style.display = 'none';
+            expensesSectionMain.style.display = 'none';
+            loansSectionMain.style.display = 'none';
+
+            if (section === 'trading') tradingSection.style.display = 'block';
+            else if (section === 'income') incomeSectionMain.style.display = 'block';
+            else if (section === 'expenses') expensesSectionMain.style.display = 'block';
+            else if (section === 'loans') loansSectionMain.style.display = 'block';
+        }
+
+        // Login logic
+        loginForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const username = loginForm.username.value.trim();
+            const password = loginForm.password.value.trim();
+
+            if (username === '' || password === '') {
+                loginError.textContent = 'Please enter username and password.';
+                return;
+            }
+
+            loginError.textContent = '';
+
+            // Try to load saved state for this user
+            const loaded = loadState(username);
+
+            if (!loaded) {
+                // Reset to initial state for new user
+                netWorth = initialNetWorth;
+                wheatPrice = 100;
+                woolPrice = 70;
+                transactions = [];
+                serverFeePaidThisMonth = false;
+                currentMonth = new Date().getMonth();
+                creditScore = 100;
+                loans = [];
+                inventory = { wheat: 0, wool: 0 };
+                transferCodes = {};
+                setActiveSection('trading');
+            }
+
+            loginOverlay.style.display = 'none';
+            app.style.display = 'grid';
+            document.body.classList.remove('loading');
+            showIntro();
+            updateUI();
+        });
+
+        // Show intro modal
+        function showIntro() {
+            introModal.style.display = 'flex';
+        }
+
+        introCloseBtn.addEventListener('click', () => {
+            introModal.style.display = 'none';
+        });
+
+        // Update UI net worth and prices
+        function updateUI() {
+            netWorthValue.textContent = netWorth.toFixed(2);
+            wheatPriceEl.textContent = wheatPrice.toFixed(2);
+            woolPriceEl.textContent = woolPrice.toFixed(2);
+            creditScoreEl.textContent = creditScore.toFixed(1) + '%';
+            updateCalculatedCost();
+            renderTransactions();
+            renderLoans();
+            updateQuantityMax();
+            saveState(loginForm.username.value.trim());
+        }
+
+        // Calculate cost based on trade type, item, and quantity
+        function updateCalculatedCost() {
+            const quantity = Number(quantityInput.value);
+            if (quantity <= 0 || isNaN(quantity)) {
+                calculatedCostEl.textContent = 'Total Cost: 0 BP';
+                return;
+            }
+            const tradeType = tradeTypeSelect.value;
+            const item = tradeItemSelect.value;
+            let price = item === 'wheat' ? wheatPrice : woolPrice;
+            let cost = price * quantity;
+            if (tradeType === 'buy') {
+                cost += taxPerTransaction;
+            } else if (tradeType === 'sell') {
+                cost -= taxPerTransaction;
+            }
+            cost = Math.max(cost, 0);
+            calculatedCostEl.textContent = `Total Cost: ${cost.toFixed(2)} BP`;
+        }
+
+        tradeTypeSelect.addEventListener('change', () => {
+            updateCalculatedCost();
+            updateQuantityMax();
+            validateQuantity();
+        });
+        quantityInput.addEventListener('input', () => {
+            updateCalculatedCost();
+            validateQuantity();
+        });
+        tradeItemSelect.addEventListener('change', () => {
+            updateCalculatedCost();
+            updateQuantityMax();
+            validateQuantity();
+        });
+
+        // Update max quantity input for selling based on inventory
+        function updateQuantityMax() {
+            const tradeType = tradeTypeSelect.value;
+            const item = tradeItemSelect.value;
+            if (tradeType === 'sell') {
+                const maxQty = inventory[item] || 0;
+                quantityInput.max = maxQty;
+                if (Number(quantityInput.value) > maxQty) {
+                    quantityInput.value = maxQty > 0 ? maxQty : 1;
+                }
+            } else {
+                quantityInput.removeAttribute('max');
+            }
+        }
+
+        // Validate quantity input for selling
+        function validateQuantity() {
+            const tradeType = tradeTypeSelect.value;
+            const item = tradeItemSelect.value;
+            const quantity = Number(quantityInput.value);
+            if (tradeType === 'sell') {
+                const maxQty = inventory[item] || 0;
+                if (quantity > maxQty) {
+                    quantityInput.value = maxQty > 0 ? maxQty : 1;
+                }
+                if (maxQty === 0) {
+                    quantityInput.value = 1;
+                }
+            }
+        }
+
+        // Render transactions filtered by type
+        function renderTransactions(filter = 'all') {
+            incomeList.innerHTML = '';
+            expensesList.innerHTML = '';
+
+            const incomes = transactions.filter(t => t.type === 'income');
+            const expenses = transactions.filter(t => t.type === 'expense');
+
+            if (incomes.length === 0) {
+                incomeList.innerHTML = '<p style="text-transform:uppercase;letter-spacing:2px;">No income transactions.</p>';
+            } else {
+                incomes.forEach(tx => {
+                    const div = document.createElement('div');
+                    div.className = 'transaction-item income';
+                    div.innerHTML = `<div class="transaction-description">${tx.description}</div><div class="transaction-amount">+${tx.amount.toFixed(2)} BP</div>`;
+                    incomeList.appendChild(div);
+                });
+            }
+
+            if (expenses.length === 0) {
+                expensesList.innerHTML = '<p style="text-transform:uppercase;letter-spacing:2px;">No expense transactions.</p>';
+            } else {
+                expenses.forEach(tx => {
+                    const div = document.createElement('div');
+                    div.className = 'transaction-item expense';
+                    div.innerHTML = `<div class="transaction-description">${tx.description}</div><div class="transaction-amount">-${tx.amount.toFixed(2)} BP</div>`;
+                    expensesList.appendChild(div);
+                });
+            }
+        }
+
+        // Add transaction
+        function addTransaction(description, amount, type, item = null, quantity = 0) {
+            transactions.push({ description, amount, type, item, quantity });
+            if (type === 'income') {
+                netWorth += amount;
+                if (item && quantity > 0) {
+                    // Selling reduces inventory
+                    inventory[item] = (inventory[item] || 0) - quantity;
+                    if (inventory[item] < 0) inventory[item] = 0;
+                }
+            } else {
+                netWorth -= amount;
+                if (item && quantity > 0) {
+                    // Buying increases inventory
+                    inventory[item] = (inventory[item] || 0) + quantity;
+                }
+            }
+            netWorth = Math.max(netWorth, 0);
+            updateQuantityMax();
+            updateUI();
+        }
+
+        // Handle trade form submission
+        tradeForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const tradeType = tradeTypeSelect.value;
+            const quantity = Number(quantityInput.value);
+            const item = tradeItemSelect.value;
+            if (quantity <= 0 || isNaN(quantity)) {
+                alert('Please enter a valid quantity.');
+                return;
+            }
+            if (tradeType === 'sell') {
+                const availableQty = inventory[item] || 0;
+                if (quantity > availableQty) {
+                    alert(`You cannot sell more ${item} than you own. You have ${availableQty} kg.`);
+                    return;
+                }
+            }
+            let price = item === 'wheat' ? wheatPrice : woolPrice;
+            let cost = price * quantity;
+            if (tradeType === 'buy') {
+                cost += taxPerTransaction;
+                if (cost > netWorth) {
+                    alert('Insufficient funds to complete purchase.');
+                    return;
+                }
+                addTransaction(`Bought ${quantity} kg ${item}`, cost, 'expense', item, quantity);
+            } else if (tradeType === 'sell') {
+                cost -= taxPerTransaction;
+                if (cost < 0) cost = 0;
+                addTransaction(`Sold ${quantity} kg ${item}`, cost, 'income', item, quantity);
+            }
+            quantityInput.value = 1;
+            updateCalculatedCost();
+        });
+
+        // Pay server fee logic
+        function applyMonthlyServerFee() {
+            const now = new Date();
+            const month = now.getMonth();
+            if (month !== currentMonth) {
+                // New month
+                currentMonth = month;
+                if (!serverFeePaidThisMonth) {
+                    // Apply late fee from previous month
+                    addTransaction('Late server fee (40 BP + 10 BP late fee)', 50, 'expense');
+                    creditScore -= creditScoreLossPerMissedFee;
+                    if (creditScore < 0) creditScore = 0;
+                }
+                // Reset for new month
+                serverFeePaidThisMonth = false;
+                // Apply monthly server fee
+                addTransaction('Monthly server fee (20 BP)', 20, 'expense');
+                updateUI();
+            }
+        }
+
+        function payServerFee() {
+            if (!serverFeePaidThisMonth) {
+                if (netWorth < monthlyServerFee) {
+                    alert('Insufficient funds to pay server fee.');
+                    return;
+                }
+                addTransaction('Server fee payment (20 BP)', monthlyServerFee, 'expense');
+                serverFeePaidThisMonth = true;
+                alert('Server fee paid successfully.');
+                updateUI();
+            } else {
+                alert('Server fee already paid this month.');
+            }
+        }
+
+        payServerFeeBtn.addEventListener('click', payServerFee);
+
+        // Loan system
+        loanForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const amount = Number(loanAmountInput.value);
+            if (amount <= 0 || isNaN(amount)) {
+                alert('Please enter a valid loan amount.');
+                return;
+            }
+            // Add loan
+            const loan = {
+                id: Date.now(),
+                amount,
+                remaining: amount,
+                date: new Date(),
+            };
+            loans.push(loan);
+            netWorth += amount;
+            addTransaction(`Loan taken: ${amount.toFixed(2)} OWO`, amount, 'income');
+            updateUI();
+            renderLoans();
+            alert(`Loan of ${amount.toFixed(2)} OWO granted.`);
+            loanAmountInput.value = 1000;
+        });
+
+        function renderLoans() {
+            loansUl.innerHTML = '';
+            if (loans.length === 0) {
+                loansUl.innerHTML = '<li style="text-transform:uppercase;letter-spacing:2px;">No active loans.</li>';
+                return;
+            }
+            loans.forEach(loan => {
+                const li = document.createElement('li');
+                li.style.marginBottom = '8px';
+                li.textContent = `Loan ID: ${loan.id} - Remaining: ${loan.remaining.toFixed(2)} OWO - Taken on: ${loan.date.toLocaleDateString()}`;
+                loansUl.appendChild(li);
+            });
+        }
+
+        // Price fluctuation logic
+        function fluctuatePrices() {
+            // Wheat fluctuates ±5%
+            const wheatChangePercent = (Math.random() * 10 - 5);
+            wheatPrice = Math.max(10, wheatPrice * (1 + wheatChangePercent / 100));
+
+            // Wool fluctuates ±3%
+            const woolChangePercent = (Math.random() * 6 - 3);
+            woolPrice = Math.max(5, woolPrice * (1 + woolChangePercent / 100));
+
+            updateUI();
+        }
+
+        // Sidebar navigation logic
+        sidebarButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setActiveSection(btn.dataset.section);
+                saveState(loginForm.username.value.trim());
+            });
+        });
+
+        // Early Loan Repayment Modal Logic
+        earlyLoanBtn.addEventListener('click', () => {
+            if (loans.length === 0) {
+                alert('No active loans to repay.');
+                return;
+            }
+            populateEarlyLoanSelect();
+            earlyRepayAmountInput.value = '';
+            earlyLoanModal.style.display = 'flex';
+            earlyLoanModal.querySelector('.modal-content').focus();
+        });
+
+        earlyLoanCloseBtn.addEventListener('click', () => {
+            earlyLoanModal.style.display = 'none';
+        });
+
+        function populateEarlyLoanSelect() {
+            earlyLoanSelect.innerHTML = '';
+            loans.forEach(loan => {
+                const option = document.createElement('option');
+                option.value = loan.id;
+                option.textContent = `Loan ID: ${loan.id} - Remaining: ${loan.remaining.toFixed(2)} OWO`;
+                earlyLoanSelect.appendChild(option);
+            });
+        }
+
+        earlyLoanForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const loanId = Number(earlyLoanSelect.value);
+            const repayAmount = Number(earlyRepayAmountInput.value);
+            if (isNaN(loanId) || !loanId) {
+                alert('Please select a loan.');
+                return;
+            }
+            if (isNaN(repayAmount) || repayAmount <= 0) {
+                alert('Please enter a valid repayment amount.');
+                return;
+            }
+            const loan = loans.find(l => l.id === loanId);
+            if (!loan) {
+                alert('Selected loan not found.');
+                return;
+            }
+            if (repayAmount > loan.remaining) {
+                alert(`Repayment amount cannot exceed remaining loan amount (${loan.remaining.toFixed(2)} OWO).`);
+                return;
+            }
+            if (repayAmount > netWorth) {
+                alert('Insufficient funds to repay this amount.');
+                return;
+            }
+            // Deduct repayment from net worth and loan remaining
+            netWorth -= repayAmount;
+            loan.remaining -= repayAmount;
+            addTransaction(`Early loan repayment: ${repayAmount.toFixed(2)} OWO`, repayAmount, 'expense');
+            if (loan.remaining <= 0) {
+                // Remove loan if fully repaid
+                loans = loans.filter(l => l.id !== loanId);
+                alert('Loan fully repaid and closed.');
+            } else {
+                alert(`Loan partially repaid. Remaining balance: ${loan.remaining.toFixed(2)} OWO.`);
+            }
+            earlyLoanModal.style.display = 'none';
+            updateUI();
+            renderLoans();
+        });
+
+        // OWO Transfer Modal Logic
+        owoTransferBtn.addEventListener('click', () => {
+            transferTypeSelect.value = 'send';
+            transferAmountInput.value = '';
+            transferRecipientInput.value = '';
+            transferCodeInput.value = '';
+            transferCodeDisplay.style.display = 'none';
+            transferCodeDisplay.textContent = '';
+            sendSection.style.display = 'block';
+            receiveSection.style.display = 'none';
+            owoTransferModal.style.display = 'flex';
+            owoTransferModal.querySelector('.modal-content').focus();
+        });
+
+        owoTransferCloseBtn.addEventListener('click', () => {
+            owoTransferModal.style.display = 'none';
+            transferCodeDisplay.style.display = 'none';
+            transferCodeDisplay.textContent = '';
+        });
+
+        // Toggle send/receive sections
+        transferTypeSelect.addEventListener('change', () => {
+            if (transferTypeSelect.value === 'send') {
+                sendSection.style.display = 'block';
+                receiveSection.style.display = 'none';
+                transferAmountInput.required = true;
+                transferRecipientInput.required = true;
+                transferCodeInput.required = false;
+                transferCodeInput.value = '';
+                transferCodeDisplay.style.display = 'none';
+                transferCodeDisplay.textContent = '';
+            } else {
+                sendSection.style.display = 'none';
+                receiveSection.style.display = 'block';
+                transferAmountInput.required = false;
+                transferRecipientInput.required = false;
+                transferAmountInput.value = '';
+                transferRecipientInput.value = '';
+                transferCodeInput.required = true;
+                transferCodeDisplay.style.display = 'none';
+                transferCodeDisplay.textContent = '';
+            }
+        });
+
+        // Generate unique transfer code
+        function generateTransferCode() {
+            // Generate a random 12-character alphanumeric code
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 12; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            // Ensure uniqueness
+            if (transferCodes[code]) {
+                return generateTransferCode();
+            }
+            return code;
+        }
+
+        owoTransferForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const transferType = transferTypeSelect.value;
+
+            if (transferType === 'send') {
+                const amount = Number(transferAmountInput.value);
+                const recipient = transferRecipientInput.value.trim();
+
+                if (!recipient) {
+                    alert('Please enter a recipient username.');
+                    return;
+                }
+                if (isNaN(amount) || amount <= 0) {
+                    alert('Please enter a valid amount.');
+                    return;
+                }
+                if (amount > netWorth) {
+                    alert('Insufficient funds to send this amount.');
+                    return;
+                }
+
+                // Deduct amount from net worth
+                netWorth -= amount;
+
+                // Generate unique transfer code
+                const code = generateTransferCode();
+
+                // Store the code with amount and sender info (sender is current user)
+                // For demo, we use username from login form input (not secure but for demo)
+                const sender = loginForm.username.value.trim() || 'Unknown';
+                transferCodes[code] = {
+                    amount: amount,
+                    sender: sender,
+                    used: false,
+                    createdAt: new Date()
+                };
+
+                // Add transaction for sending
+                addTransaction(`Sent ${amount.toFixed(2)} OWO to ${recipient} (via code)`, amount, 'expense');
+
+                // Show the code to the sender
+                transferCodeDisplay.textContent = `Transfer Code: ${code}`;
+                transferCodeDisplay.style.display = 'block';
+
+                alert(`Successfully created transfer code for ${amount.toFixed(2)} OWO to ${recipient}. Share this code with the recipient.`);
+
+                // Clear inputs but keep modal open so user can copy code
+                transferAmountInput.value = '';
+                transferRecipientInput.value = '';
+                saveState(loginForm.username.value.trim());
+            } else if (transferType === 'receive') {
+                const code = transferCodeInput.value.trim().toUpperCase();
+
+                if (!code) {
+                    alert('Please enter a transfer code.');
+                    return;
+                }
+
+                const transfer = transferCodes[code];
+
+                if (!transfer) {
+                    alert('Invalid transfer code.');
+                    return;
+                }
+
+                if (transfer.used) {
+                    alert('This transfer code has already been used.');
+                    return;
+                }
+
+                // Credit amount to net worth
+                netWorth += transfer.amount;
+
+                // Mark code as used
+                transfer.used = true;
+
+                // Add transaction for receiving
+                const receiver = loginForm.username.value.trim() || 'Unknown';
+                addTransaction(`Received ${transfer.amount.toFixed(2)} OWO from ${transfer.sender} (code redeemed)`, transfer.amount, 'income');
+
+                alert(`Successfully redeemed transfer code and received ${transfer.amount.toFixed(2)} OWO.`);
+
+                // Clear input and close modal
+                transferCodeInput.value = '';
+                owoTransferModal.style.display = 'none';
+                transferCodeDisplay.style.display = 'none';
+                transferCodeDisplay.textContent = '';
+                updateUI();
+                saveState(loginForm.username.value.trim());
+            }
+        });
+
+        // Initial UI update
+        updateUI();
+
+        // Price fluctuation interval every 10 seconds
+        setInterval(() => {
+            fluctuatePrices();
+            saveState(loginForm.username.value.trim());
+        }, 10000);
+
+        // Monthly server fee check every minute (simulate month change)
+        applyMonthlyServerFee();
+        setInterval(() => {
+            applyMonthlyServerFee();
+            saveState(loginForm.username.value.trim());
+        }, 60000);
+    </script>
+</body>
+
+</html>
